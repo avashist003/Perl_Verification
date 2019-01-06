@@ -1,8 +1,12 @@
 # Perl_Verification
 Perl program which generates synthesizable Verilog® HDL, and a self-checking testbench, for a multistage pipeline register. The code is documented using perldoc.
 
+The script implements:
+- Verilog code generator based on the user defined arguments.
+- Perl parser to read arguments from user created parameter file.
+
 # Description
-- The perl script av8911.pl takes input argument either from command line or from a user created parameter file.
+- The perl script av8911.pl takes input argument either from command line or from user created parameter file.
 - Passing both will result in an error and missing any mandatory arguments will also result in an error.
 
 # Arguments
