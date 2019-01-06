@@ -1,0 +1,1228 @@
+#!/usr/bin/perl -w
+#
+# $Id: tdspasm,v 1.1.1.1 2002/01/15 00:52:39 mai Exp $
+#
+# Author:  Mark A. Indovina
+#          Rochester, NY, USA
+#
+#------------------------------------------------
+#
+# this program is the tdsp assembler
+#  at this time the program only supports one source file at
+#  a time, this limitation would be easy to correct, but something
+#  has to be left to the student...
+#
+#  the assembler supports a basic structure as follows:
+#
+#    an "equate" statement is used to define
+#        a runtime constant, the syntax is:
+#
+#    <symbol>    =           <value, value expression>    ;    <comment>
+#        value expressions can be:
+#            simple:     +, -, *, /, %
+#            logical:    ~, ^, &, | << >>
+#            complex:    sin(), cos(), tan(), exp(), log(), sqrt()
+#    symbol values and value expressions can contain other symbols and labels
+#    
+#    <label>:    <opcode>    <operand, operand expression>    ;    <comment>
+#        operand expressions can be:
+#            simple:     +, -, *, /, %
+#            logical:    ~, ^, &, |
+#            complex:    sin(), cos(), tan(), exp(), log(), sqrt()
+#    operand values and operand expressions can contain symbols and labels
+#
+#    an "originate" statement is used to relocate
+#        source blocks, the syntax is:
+#
+#    <label>:    .aorg       <operand, operand expression>    ;    <comment>
+#
+#    a "data word" statement is used to include constant
+#        values into the object file, the syntax is:
+#
+#    <label>:    .data       <operand, operand expression>    ;    <comment>
+#
+#--------------------------------------------------------
+#
+if ( defined($ARGV[0]) && ($ARGV[0] =~ /\.asm$/) ) {
+	open( LIST, "$ARGV[0]") || die " Can't open '$ARGV[0]'" ;
+	}
+else {
+	die " usage: $0 <tdsp source listing>.asm\n" ;
+	}
+#
+$dum = "    " ;
+$dum2 = $dum." ".$dum ;
+$size = 0 ;
+$opsize = 0 ;
+$rcsver = '$Revision: 1.1.1.1 $' ;
+$rcsver =~ m/\$\s*Revision\s*:\s*(.+)\s*\$/ ;
+$rcsver = $1 ;
+$rcsver =~ s/\s//g ;
+$version = "$0, RCS v$rcsver" ;
+$date = `date` ;
+chop($date) ;
+$date = "Prepared: ".$date ;
+$name = $ARGV[0] ;
+$name =~ s/\.asm$// ;
+open( OLIST, "> $name.lst") || die " Can't open '$name.lst'" ;
+open( SYM, "> $name.sym") || die " Can't open '$name.sym'" ;
+open( OBJ, "> $name.obj") || die " Can't open '$name.obj'" ;
+#
+%inst = () ;
+%inst_size = () ;
+%symbols = () ;
+#
+require "opcodes.pl" ;
+#
+foreach $key (keys(%inst)) {
+	if ($key eq "END_OF_INST") {
+		next ;
+		}
+	if (length($key) > $opsize) {
+		$opsize = length($key) ;
+		}
+	if (($inst{$key} =~ /^0x/) || ($inst{$key} =~ /^0/)) {
+		$inst{$key} = oct($inst{$key}) ;
+		}
+	}
+#
+# attribute key words
+#
+%attr = (
+	".DATA", 1,
+	".data", 1,
+	".AORG", 1,
+	".aorg", 1
+	) ;
+#
+# reserved expression key words
+#
+%ex_res = (
+	"sin", 1,
+	"cos", 1,
+	"tan", 1,
+	"exp", 1,
+	"log", 1,
+	"sqrt", 1
+	) ;
+#
+# single operand instructions
+#
+%one_op = (
+	"b", 1,
+	"bgez", 1,
+	"bgz", 1,
+	"bioz", 1,
+	"blez", 1,
+	"blz", 1,
+	"bnz", 1,
+	"bv", 1,
+	"bz", 1,
+	"call", 1,
+	"lack", 1,
+	"larp", 1,
+	"ldpk", 1,
+	"addk", 1,
+	"subk", 1,
+	"mpyk", 1
+	) ;
+#
+# zero operand instructions
+#
+%zero_op = (
+	"abs", 1,
+	"apac", 1,
+	"cala", 1,
+	"dint", 1,
+	"eint", 1,
+	"nop", 1,
+	"pac", 1,
+	"pop", 1,
+	"push", 1,
+	"ret", 1,
+	"rovm", 1,
+	"rxf", 1,
+	"sovm", 1,
+	"spac", 1,
+	"sxf", 1,
+	"zac", 1
+	) ;
+#
+# instruction masks
+#
+%op_mask = (
+	"add", 0x0fff,
+	"addk", 0x00ff,
+	"subk", 0x00ff,
+	"in", 0x07ff,
+	"lac", 0x0fff,
+	"lar", 0x07ff,
+	"lark", 0x07ff,
+	"larp", 0x81,
+	"ldpk", 0x01,
+	"mpyk", 0x01fff,
+	"out", 0x07ff,
+	"sach", 0x07ff,
+	"sar", 0x07ff,
+	"sub", 0x0fff,
+	".data", 0x0ffff,
+	".aorg", 0x0ffff,
+	"call", 0x0ffff,
+	"b", 0x0ffff,
+	"banz", 0x0ffff,
+	"bgez", 0x0ffff,
+	"bgz", 0x0ffff,
+	"bioz", 0x0ffff,
+	"blez", 0x0ffff,
+	"blz", 0x0ffff,
+	"bnz", 0x0ffff,
+	"bv", 0x0ffff,
+	"bz", 0x0ffff
+	) ;
+#
+# indirect addressing instructions
+#
+%ind_inst = (
+    "add", 1,
+    "addh", 1,
+    "adds", 1,
+    "and", 1,
+    "dmov", 1,
+    "in", 1,
+    "lac", 1,
+    "lar", 1,
+    "ldp", 1,
+    "lst", 1,
+    "lt", 1,
+    "lta", 1,
+    "ltd", 1,
+    "ltp", 1,
+    "mac", 1,
+    "mar", 1,
+    "mpy", 1,
+    "or", 1,
+    "out", 1,
+    "sach", 1,
+    "sacl", 1,
+    "sar", 1,
+    "sst", 1,
+    "sub", 1,
+    "subc", 1,
+    "subh", 1,
+    "subs", 1,
+    "tblr", 1,
+    "tblw", 1,
+    "xor", 1,
+    "zalh", 1,
+    "zals", 1,
+    "END_OF_INST", -1
+    ) ;
+#
+#
+%addr = () ;
+$warn = 0 ;
+$errs = 0 ;
+#
+# collect symbols and check opcodes... 
+#
+$pass = 1 ;
+print STDERR " Pass $pass...\n" ;
+while (<LIST>) {
+	chop;
+	$line = $_ ;
+	$line =~ s/^\s+//g ;
+	if (($line =~ /^;/) || (length($line) == 0)) {
+		next ;
+		}
+	$line =~ s/;.*$//g ;
+	$line =~ s/\s+$//g ;
+	$line =~ s/=/ = /g ;
+	$line =~ s/\s*,\s*/,/g ;
+	$line =~ s/\s+/ /g ;
+	if ($line =~ / = /) {
+		($var, $val) = split( / = /, $line ) ;
+		if ($var =~ /:$/) {
+			&syntax_error("symbol as label, '$line'") ;
+			}
+		&check_symbol( $var ) ;
+		$symbols{ $var } = $val ;
+		next ;
+		}
+	@mach = split( / /, $line ) ;
+	(@mach) = &fix_mach(@mach) ;
+	if ($mach[0] =~ /:$/) {
+		if (length($mach[0]) > $size) {
+			$size = length($mach[0]) ;
+			}
+		$mach[0] =~ s/:$// ;
+		&check_symbol( $mach[0] ) ;
+		$symbols{ $mach[0] } = 0 ;
+		$addr{ $mach[0] } = 1 ;
+		if (defined( $mach[1] )) {
+			&check_op( $mach[1] ) ;
+			}
+		}
+	else {
+		&check_op( $mach[0] ) ;
+		}
+	@mach = () ;
+}
+#
+close(LIST) ;
+
+if ($errs == 1) {
+	print STDERR " Failed assembly with $errs error.\n" ;
+	exit(1) ;
+	}
+elsif ($errs > 1) {
+	print STDERR " Failed assembly with $errs errors.\n" ;
+	exit(1) ;
+	}
+
+open( LIST, "$ARGV[0]") || die " Can't open '$ARGV[0]'" ;
+#
+# locate address symbols and check symbols... 
+#
+# pass 2
+$pass++ ;
+$pc = 0 ;
+print STDERR " Pass $pass...\n" ;
+while (<LIST>) {
+	chop;
+	$save = $_ ;
+	$line = $_ ;
+	$line =~ s/^\s+//g ;
+	if (($line =~ /^;/) || (length($line) == 0)) {
+		next ;
+		}
+	$line =~ s/;.*$//g ;
+	$line =~ s/\s+$//g ;
+	$line =~ s/=/ = /g ;
+	$line =~ s/\s*,\s*/,/g ;
+	$line =~ s/\s+/ /g ;
+	if ($line =~ / = /) {
+		next ;
+		}
+	@mach = split( / /, $line ) ;
+	(@mach) = &fix_mach(@mach) ;
+	if (($mach[0] eq ".aorg") || ($mach[0] eq ".AORG")) {
+		if (defined($mach[1])) {
+			$pc = &eval_operand($mach[0], $mach[1]) ;
+			$pc &= 0x0ffff ;
+			next ;
+		} else {
+			&syntax_error($save) ;
+			}
+		}
+	elsif ((($mach[0] =~ /:$/) && (defined($mach[1]))) &&
+		(($mach[1] eq ".aorg") || ($mach[1] eq ".AORG"))) {
+		if (defined($mach[2])) {
+			$pc = &eval_operand($mach[1], $mach[2]) ;
+			$pc &= 0x0ffff ;
+			$var = $mach[0] ;
+			$var =~ s/:$// ;
+			$symbols{ $var } = $pc ;
+			next ;
+		} else {
+			&syntax_error($save) ;
+			}
+		}
+	elsif ($mach[0] =~ /:$/) {
+		$var = $mach[0] ;
+		$var =~ s/:$// ;
+		$symbols{ $var } = $pc ;
+		}
+	if (($mach[0] =~ /:$/) && (defined($mach[1]))) {
+		if (defined( $mach[2] )) {
+			&check_operand($mach[2]) ;
+			}
+		$pc = $pc + $inst_size{ $mach[1] } ;
+		}
+	elsif ($mach[0] !~ /:$/) {
+		if (defined( $mach[1] )) {
+			&check_operand($mach[1]) ;
+			}
+		$pc = $pc + $inst_size{ $mach[0] } ;
+		}
+	@mach = () ;
+}
+#
+# evaluate symbol expressions if utilized
+#
+foreach $key (sort(keys(%symbols))) {
+	$symbols{$key} = &eval_sym_exp( $key, $symbols{$key} ) ;
+	}
+#
+close(LIST) ;
+
+if ($errs == 1) {
+	print STDERR " Failed assembly with $errs error.\n" ;
+	exit(1) ;
+	}
+elsif ($errs > 1) {
+	print STDERR " Failed assembly with $errs errors.\n" ;
+	exit(1) ;
+	}
+
+open( LIST, "$ARGV[0]") || die " Can't open '$ARGV[0]'" ;
+#
+# pass 3
+$pass++ ;
+$pc = 0 ;
+print STDERR " Pass $pass...\n" ;
+printf OLIST "  %s\n", $version ;
+printf OLIST "  Listing for module: \"%s\"\n", $name ;
+printf OLIST "  %s\n", $date ;
+print OLIST "*******************************************\n" ;
+printf OBJ "//  %s\n", $version ;
+printf OBJ "//  Object for module: \"%s\"\n", $name ;
+printf OBJ "//  %s\n", $date ;
+print OBJ "//*******************************************\n" ;
+foreach $key (sort(keys(%symbols))) {
+	if (($symbols{$key} !~ /\./) &&
+		(($symbols{$key} =~ /^0/) || ($symbols{$key} =~ /^0x/))) {
+		$symbols{$key} = oct($symbols{$key}) ;
+		}
+	}
+while (<LIST>) {
+	chop;
+	$save = $_ ;
+	$line = $_ ;
+	$line =~ s/^\s+//g ;
+	if (($line =~ /^;/) || (length($line) == 0)) {
+		next ;
+		}
+	$line =~ s/;.*$//g ;
+	$line =~ s/\s+$//g ;
+	$line =~ s/=/ = /g ;
+	$line =~ s/\s*,\s*/,/g ;
+	$line =~ s/\s+/ /g ;
+	if ($line =~ / = /) {
+		next ;
+		}
+	@mach = split( / /, $line ) ;
+	(@mach) = &fix_mach(@mach) ;
+	if (($mach[0] eq ".aorg") || ($mach[0] eq ".AORG")) {
+		$pc = &eval_operand($mach[0], $mach[1]) ;
+		$pc &= 0x0ffff ;
+		&print_list( $pc, *mach ) ;
+		@mach = () ;
+		next ;
+		}
+	elsif ((($mach[0] =~ /:$/) && (defined($mach[1]))) &&
+		(($mach[1] eq ".aorg") || ($mach[1] eq ".AORG"))) {
+		$pc = &eval_operand($mach[1], $mach[2]) ;
+		$pc &= 0x0ffff ;
+		&print_list( $pc, *mach ) ;
+		@mach = () ;
+		next ;
+		}
+	if (($mach[0] =~ /:$/) && (!defined($mach[1]))) {
+		&print_list( $pc, *mach ) ;
+		@mach = () ;
+		next ;
+		}
+	&print_list( $pc, *mach ) ;
+	&print_obj( $pc, *mach ) ;
+	if (($mach[0] =~ /:$/) && (defined($mach[1]))) {
+		$pc = $pc + $inst_size{ $mach[1] } ;
+	} else {
+		$pc = $pc + $inst_size{ $mach[0] } ;
+		}
+	@mach = () ;
+}
+#
+&print_sym() ;
+
+if ($errs == 0) {
+	print STDERR " Passed assembly with $errs errors," ;
+	if ($warn == 1) {
+		print STDERR " and $warn warning.\n" ;
+	} else {
+		print STDERR " and $warn warnings.\n" ;
+		}
+	}
+elsif ($errs == 1) {
+	print STDERR " Failed assembly with $errs error," ;
+	if ($warn == 1) {
+		print STDERR " and $warn warning.\n" ;
+	} else {
+		print STDERR " and $warn warnings.\n" ;
+		}
+	}
+else {
+	print STDERR " Failed assembly with $errs errors," ;
+	if ($warn == 1) {
+		print STDERR " and $warn warning.\n" ;
+	} else {
+		print STDERR " and $warn warnings.\n" ;
+		}
+	}
+
+close(LIST);
+close(OLIST);
+close(SYM);
+close(OBJ);
+if ($errs > 0) {
+	unlink("$name.lst") ;
+	unlink("$name.sym") ;
+	unlink("$name.obj") ;
+	exit(1) ;
+	}
+exit(0) ;
+
+#
+#****** subroutines ******
+#
+# check symbol syntax
+#
+sub check_symbol {
+	local($var) = (@_) ;
+
+	if (defined( $inst{ $var } )) {
+		printf STDERR " *ERROR* line(%d), symbol (%s) is a reserved word, exiting\n", $., $var ;
+		exit(1) ;
+		}
+	if (defined( $attr{ $var } )) {
+		printf STDERR " *ERROR* line(%d), symbol (%s) is a reserved word, exiting\n", $., $var ;
+		exit(1) ;
+		}
+	if (defined( $ex_res{ $var } )) {
+		printf STDERR " *ERROR* line(%d), symbol (%s) is a reserved word, exiting\n", $., $var ;
+		exit(1) ;
+		}
+	if ($var !~ /[a-zA-Z]+/) {
+		&syntax_error( "symbol($var)" );
+		}
+	if (defined( $symbols{ $var } )) {
+		printf STDERR " *WARNING* line(%d), symbol (%s) redefined\n", $., $var ;
+		$warn++ ;
+		}
+	return ;
+}
+#
+# check opcode syntax
+#
+sub check_op {
+	local($var) = (@_) ;
+
+	if ($var =~ /^\./) {
+		if (defined( $attr{ $var } )) {
+			return ;
+		} else {
+			printf STDERR
+				" *ERROR* line(%d), (%s) is an unknown attribute, exiting\n", $., $var ;
+			exit(1) ;
+			}
+		}
+	elsif (!defined( $inst{ $var } )) {
+		printf STDERR " *ERROR* line(%d), (%s) is an unknown opcode, exiting\n", $., $var ;
+		exit(1) ;
+		}
+	return ;
+}
+#
+# check operand syntax
+#
+sub check_operand {
+	local($var) = (@_) ;
+	local($val) = $var ;
+	local(@ind) ;
+
+	if ( $val =~ /^0x/ ) {
+		$val = hex($val) ;
+		}
+	if(defined($symbols{$var})) {
+		return ;
+		}
+	elsif(defined($inst{$var})) {
+		return ;
+		}
+	elsif(($val !~ /[a-zA-Z]+/) && ($val =~ /^[\-]*[0-9]+$/)) {
+		return ;
+		}
+	elsif($val =~ /,/) {
+		(@ind) = split( /,/, $val) ;
+		if (!defined($inst{$ind[0]})) {
+			&check_operand( $ind[0] ) ;
+		} else {
+			&check_op( $ind[0] ) ;
+			}
+		if (defined($ind[1]) && !defined($inst{$ind[1]})) {
+			&check_operand($ind[1]) ;
+			}
+		if (defined($ind[2]) && !defined($inst{$ind[2]})) {
+			&check_operand($ind[2]) ;
+			}
+		return ;
+		}
+	elsif ($var =~ /[\(\)\+\-\*\/\~\^\&\|\<\>]+/) {
+		$val = &eval_sym_exp( "check_operand", $var ) ;
+		return ;
+		}
+
+	printf STDERR " *ERROR*, line(%d), (%s) is an unknown operand, exiting\n", $., $val ;
+	exit(1) ;
+}
+#
+# report a syntax error
+#
+sub syntax_error {
+	local($l) = (@_) ;
+
+	$l =~ s/^\s*// ;
+	printf STDERR " *SYNTAX ERROR* line(%d):\n    ->%s\n", $., $l ;
+	$errs++ ;
+}
+
+#
+# print symbol cross reference listing
+#
+sub print_sym {
+	local( $sym ) ;
+	local( $len ) = 0 ;
+	local( $siz ) = 0 ;
+
+    printf SYM "  %s\n", $version ;
+    printf SYM "  Symbol listing for module: \"%s\"\n", $name ;
+    printf SYM "  %s\n", $date ;
+    print  SYM "  * <symbol> = <hex> (<octal>) (<decimal>) <R,A>\n" ;
+    print  SYM "  * where: R == relocatable, A == absolute\n" ;
+    print  SYM "*******************************************\n" ;
+	foreach $key (sort(keys(%symbols))) {
+		if (length($key) > $len) {
+			$len = length($key) ;
+			}
+		}
+	$len++ ;
+	foreach $key (sort(keys(%symbols))) {
+		$sym = $symbols{ $key } ;
+		$siz = $len - (length($key) + 1) ;
+		$siz = " " x $siz ;
+		$sym &= 0x0ffff ;
+		if (defined( $addr{ $key } )) {
+    		printf SYM "  %s%s = 0x%04.4x (%#7.7o) (%5d) R\n", $siz, $key, $sym, $sym, $sym ;
+		} else {
+    		printf SYM "  %s%s = 0x%04.4x (%#7.7o) (%5d) A", $siz, $key, $sym, $sym, $sym ;
+			if ($symbols{ $key } =~ /\./) {
+				printf SYM " -- FP (%.8f)", $symbols{ $key } ;
+				}
+			elsif (defined($inst{$key})) {
+				print SYM " -- predefined symbol" ;
+				}
+			printf SYM "\n" ;
+			}
+    	}
+}
+#
+# print composite listing
+#
+sub print_list {
+	local( $pc, *tmach ) = ( @_ ) ;
+	local( $op ) = &calc_op( @tmach ) ;
+	local( $sp ) = ' ' x ($size + 1) ;
+	local( $s ) ;
+	local( @ops ) = split( /:/, $op );
+
+	if ($op eq $dum2 ) {
+		printf OLIST "\t%0.4x %s", $pc, $op ;
+		}
+	elsif ($ops[1] eq $dum) {
+		printf OLIST "\t%0.4x %s %s", $pc, $ops[0], $ops[1] ;
+	} else {
+		printf OLIST "\t%0.4x %s %s", $pc, $ops[0], $dum ;
+	}
+	if ($tmach[0] !~ /:$/) {
+		printf OLIST " %s%s", $sp, $tmach[0] ;
+		if (defined($tmach[1])) {
+			$s = $opsize - length($tmach[0]) ;
+			$s = ' ' x $s ;
+			printf OLIST " %s%s", $s, $tmach[1] ;
+			}
+		}
+	elsif ($tmach[0] =~ /:$/) {
+		$s = $size - length($tmach[0]) ;
+		$s = ' ' x $s ;
+		printf OLIST " %s%s", $s, $tmach[0] ;
+		if (defined($tmach[1])) {
+			printf OLIST " %s", $tmach[1] ;
+			}
+		if (defined($tmach[2])) {
+			$s = $opsize - length($tmach[1]) ;
+			$s = ' ' x $s ;
+			printf OLIST " %s%s", $s, $tmach[2] ;
+			}
+		}
+	print OLIST "\n" ;
+	if (($op ne $dum2 ) && ($ops[1] ne $dum)) {
+		printf OLIST "\t%0.4x %s %s\n", ($pc+1), $ops[1], $dum ;
+	}
+}
+#
+# print object code
+#
+sub print_obj {
+	local( $pc, *tmach ) = ( @_ ) ;
+	local( $op ) = &calc_op( @tmach ) ;
+	local( @ops ) = split( /:/, $op );
+
+	if ($ops[1] eq $dum) {
+		printf OBJ "@%0.4x %s\n", $pc, $ops[0] ;
+	} else {
+		printf OBJ "@%0.4x %s\n", $pc, $ops[0] ;
+		printf OBJ "@%0.4x %s\n", ($pc+1), $ops[1] ;
+	}
+	#printf OBJ "@%0.4x %s\n", $pc, $op ;
+}
+#
+# calculate final machine code
+#
+sub calc_op {
+	local( @lmach ) = ( @_ ) ;
+	local( $in, $op, $oper ) = ( 0, 0, 0 ) ;
+	local( $operand ) = 0 ;
+
+	if ($lmach[0] =~ /:$/) {
+		if (!defined($lmach[1])) {
+			$op = sprintf("%s", $dum2) ;
+			return( $op ) ;
+			}
+		$in = $lmach[1] ;
+		$op = $inst{ $lmach[1] } ;
+		if (defined( $lmach[2] ) ) {
+			$operand = $lmach[2] ;
+			}
+	} else {
+		$in = $lmach[0] ;
+		$op = $inst{ $lmach[0] } ;
+		if (defined( $lmach[1] ) ) {
+			$operand = $lmach[1] ;
+			}
+		}
+
+	$in =~ tr/A-Z/a-z/ ;
+	&check_line_syntax( ($in, @lmach) ) ;
+	if ($in eq ".data") {
+		$oper = &eval_operand($in, $operand) ;
+		}
+	elsif ($in eq ".aorg") {
+		return("$dum:$dum") ;
+		}
+	elsif ($in eq "banz") {
+		($op, $oper) = &calc_banz($in, $op, $operand) ;
+		}
+	elsif ($in eq "larp") {
+		$oper = &calc_larp($in, $operand) ;
+		}
+	elsif ($in eq "lark") {
+		$oper = &calc_lark($in, $operand) ;
+		}
+	elsif (($in eq "lar") || ($in eq "sar")) {
+		$oper = &calc_ar($in, $operand) ;
+		}
+	elsif ($in eq "mar") {
+		$oper = &calc_mar($in, $operand) ;
+		}
+	elsif (($in eq "in") || ($in eq "out")) {
+		$oper = &calc_port($in, $operand) ;
+		} 
+	elsif (($in eq "add") || ($in eq "sub")|| ($in eq "lac")) {
+		$oper = &calc_ind_shift($in, $operand, 0x0f) ;
+		} 
+	elsif (($in eq "sach")) {
+		$oper = &calc_ind_shift($in, $operand, 0x07) ;
+		} 
+	elsif ($operand =~ /,/) {
+		$oper = &calc_ind($in, $operand) ;
+		}
+	elsif (defined( $symbols{ $operand })) {
+		$oper = &eval_operand($in, $operand) ;
+		}
+	elsif (defined( $inst{ $operand })) {
+		$oper = $inst{ $operand } ;
+		}
+	elsif (($operand =~ /^0/) || ($operand =~ /^0x/)) {
+		$oper = oct($operand) ;
+		}
+	elsif ($operand =~ /[\(\)\+\-\*\/\~\^\&\|\<\>]+/) {
+		$oper = &eval_sym_exp( "calc_op", $operand ) ;
+		}
+	else {
+		$oper = $operand ;
+		}
+	if (defined($op_mask{$in})) {
+		if ($oper > $op_mask{$in}) {
+			printf STDERR " *WARNING* line(%d), symbol (%s) truncated to a width of 0x%x\n", $., $oper, $op_mask{$in} ;
+			$warn++ ;
+			}
+		$oper &= $op_mask{$in} ;
+		}
+	else {
+		if ($oper > 0x0ff) {
+			printf STDERR " *WARNING* line(%d), symbol (%s) truncated to a width of 0x0ff\n", $., $oper ;
+			$warn++ ;
+			}
+		$oper &= 0x0ff ;
+		}
+	if ($inst_size{ $in } == 2) {
+		$op = sprintf("%0.4x:%0.4x", $op, $oper) ;
+	} else {
+		$op = ($op + $oper) & 0x0ffff ;
+		$op = sprintf("%0.4x:%s", $op, $dum) ;
+		}
+	return( $op ) ;
+}
+#
+# split and calculate indirect attributes
+#
+sub calc_ind {
+	local( $opcode, $inds ) = ( @_ ) ;
+	local( $op ) = 0 ;
+
+	(@ind) = split( /,/, $inds) ;
+
+	if (defined($ind[0])) {
+		$ind[0] = &eval_operand($opcode, $ind[0]) ;
+		$op += $ind[0] ;
+		}
+	if (defined($ind[1])) {
+		$ind[1] = &eval_operand($opcode, $ind[1]) ;
+		$op += ($ind[1] & 0x01) ;
+		$op &= 0xfff7 ;
+		}
+	if (defined($ind[2])) {
+		&syntax_error( "$opcode, $inds" ) ;
+		}
+
+	return($op);
+}
+#
+# split and calculate (with shift) indirect attributes
+#
+sub calc_ind_shift {
+	local( $opcode, $inds, $mask ) = ( @_ ) ;
+	local( $op ) = 0 ;
+
+	(@ind) = split( /,/, $inds) ;
+
+	if (defined($ind[0])) {
+		$ind[0] = &eval_operand($opcode, $ind[0]) ;
+		$op += $ind[0] ;
+		}
+	if (defined($ind[1])) {
+		$ind[1] = &eval_operand($opcode, $ind[1]) ;
+		$op += (($ind[1] & $mask) << 8) ;
+		}
+	if (defined($ind[2])) {
+		$ind[2] = &eval_operand($opcode, $ind[2]) ;
+		$op += ($ind[2] & 0x01) ;
+		$op &= 0xfff7 ;
+		}
+
+	return($op);
+}
+#
+# split and calculate auxiliary register attributes
+#
+sub calc_ar {
+	local( $opcode, $inds ) = ( @_ ) ;
+	local( $op ) = 0 ;
+
+	(@ind) = split( /,/, $inds) ;
+
+	if (!defined($ind[0]) && !defined($ind[1])) {
+		&syntax_error( "$opcode $inds" );
+		}
+
+	if (defined($ind[1])) {
+		$ind[1] = &eval_operand($opcode, $ind[1]) ;
+		$op += $ind[1] ;
+		}
+	if (defined($ind[0])) {
+		$ind[0] = &eval_operand($opcode, $ind[0]) ;
+		$op += (($ind[0] & 0x07) << 8) ;
+		}
+	if (defined($ind[2])) {
+		$ind[2] = &eval_operand($opcode, $ind[2]) ;
+		$op += ($ind[2] & 0x01) ;
+		$op &= 0xfff7 ;
+		}
+
+	return($op);
+}
+#
+# split and calculate port register attributes
+#
+sub calc_port {
+	local( $opcode, $inds ) = ( @_ ) ;
+	local( $op ) = 0 ;
+
+	(@ind) = split( /,/, $inds) ;
+
+	if (!defined($ind[0]) && !defined($ind[1])) {
+		&syntax_error( "$opcode $inds" );
+		}
+	if (defined($ind[0])) {
+		$ind[0] = &eval_operand($opcode, $ind[0]) ;
+		$op += ($ind[0] & 0x0ff) ;
+	}
+	if (defined($ind[1])) {
+		$ind[1] = &eval_operand($opcode, $ind[1]) ;
+		$op += (($ind[1] & 0x07) << 8) ;
+	}
+	if (defined($ind[2])) {
+		$ind[2] = &eval_operand($opcode, $ind[2]) ;
+		$op += ($ind[2] & 0x01) ;
+		$op &= 0xfff7 ;
+	}
+
+	return($op);
+}
+#
+# split and calculate load auxiliary register with a constant attributes
+#
+sub calc_lark {
+	local( $opcode, $inds ) = ( @_ ) ;
+	local( $op ) = 0 ;
+	local( $var ) = 0 ;
+
+	(@ind) = split( /,/, $inds) ;
+
+	if (!defined($ind[0]) && !defined($ind[1])) {
+		&syntax_error( "$opcode $inds" );
+		}
+
+	if (defined($ind[1])) {
+		$var = &eval_operand($opcode, $ind[1]) ;
+		if ($var > 0x0ff) {
+			printf STDERR " *WARNING* line(%d), symbol (%s) truncated to a width of 0xff\n", $., $ind[1] ;
+			$warn++ ;
+			$var &= 0xff ;
+			}
+		$op += $var ;
+		}
+	if (defined($ind[0])) {
+		$ind[0] = &eval_operand($opcode, $ind[0]) ;
+		$op += (($ind[0] & 0x01) << 8) ;
+	}
+
+	return($op);
+}
+#
+# split and calculate modify auxiliary register
+#
+sub calc_mar {
+	local( $opcode, $inds ) = ( @_ ) ;
+	local( $op ) = 0 ;
+
+	(@ind) = split( /,/, $inds) ;
+
+	if (!defined($ind[0])) {
+		&syntax_error( "$opcode $inds" );
+		}
+
+	if (defined($ind[0])) {
+		$ind[0] = &eval_operand($opcode, $ind[0]) ;
+		$op += $ind[0] ;
+		}
+	if (defined($ind[1])) {
+		$ind[1] = &eval_operand($opcode, $ind[1]) ;
+		$op += ($ind[1] & 0x01) ;
+		$op &= 0xfff7 ;
+	}
+
+	return($op);
+}
+#
+# split and calculate load auxilary register pointer
+#
+sub calc_larp {
+	local( $opcode, $inds ) = ( @_ ) ;
+	local( $op ) = 0 ;
+
+	(@ind) = split( /,/, $inds) ;
+
+	if (!defined($ind[0])) {
+		&syntax_error( "$opcode $inds" );
+		}
+
+	if (defined($ind[1])) {
+		&syntax_error( "$opcode $inds" );
+		}
+	if (defined($ind[0])) {
+		$ind[0] = &eval_operand($opcode, $ind[0]) ;
+		$ind[0] = (($ind[0] & 0x01) | 0x0080) ;
+		$op += $ind[0] ;
+		$op &= 0xfff7 ;
+	}
+
+	return($op);
+}
+#
+# split and calculate branch on auxilary register not zero (banz)
+#
+sub calc_banz {
+	local( $opcode, $op, $inds ) = ( @_ ) ;
+	local( $oper ) = (0) ;
+
+	(@ind) = split( /,/, $inds) ;
+
+	if (!defined($ind[0])) {
+		&syntax_error( "$opcode $inds" );
+		}
+	else {
+		$ind[0] = &eval_operand($opcode, $ind[0]) ;
+		$oper += ($ind[0] & 0x0ffff) ;
+		}
+	if (defined($ind[1])) {
+		if ($ind[1] !~ /\*/) {
+			&syntax_error( "$opcode $inds" );
+			}
+		else {
+			$ind[1] = &eval_operand($opcode, $ind[1]) ;
+			$op += $ind[1] ;
+			}
+		}
+	else {
+		$ind[1] = &eval_operand($opcode, "*-") ;
+		$op += $ind[1] ;
+		}
+	if (defined($ind[2])) {
+		$ind[2] = &eval_operand($opcode, $ind[2]) ;
+		$op += ($ind[2] & 0x01) ;
+		$op &= 0xfff7 ;
+		}
+
+	return(($op, $oper));
+}
+#
+# evaluate symbol expressions
+#
+sub eval_sym_exp {
+	local( $var, $exp ) = ( @_ ) ;
+	local( $pr );
+	local( @x );
+
+	$exp = " ".$exp." " ;
+
+	$exp =~ s/\s*([\+\-\*\/\~\^\&\|])\s*/ $1 /g ;
+	$exp =~ s/\s*([\(\)])\s*/ $1 /g ;
+
+	$pr = $exp ;
+	$pr =~ s/\s*([\(\)\+\-\*\/\~\^\&\|\<\>])\s*/ /g ;
+	$pr =~ s/^\s+// ;
+	$pr =~ s/\s+$// ;
+	$pr =~ s/\s+/ /g ;
+	( @x ) = split( /\s/, $pr );
+
+	foreach $pr (@x) {
+		if (defined($symbols{$pr})) {
+			if ($symbols{$pr} =~ /[\+\-\*\/\~\^\&\|\<\>]/) {
+				$symbols{$pr} = &eval_sym_exp($pr, $symbols{$pr}) ;
+				}
+			next ;
+			}
+		elsif (defined($ex_res{$pr})) {
+			next ;
+			}
+		elsif (($pr =~ /[0-9]+/) && ($pr !~ /[a-zA-Z]+/)) {
+			next ;
+			}
+		elsif ($pr =~ /0x[a-f,A-F,0-9]+/) {
+			next ;
+			}
+		else {
+			printf STDERR " *ERROR* line(%d), symbol(%s) not defined, exiting\n", $., $pr ;
+			exit(1) ;
+			}
+		}
+
+	if ( $exp =~ / $var / ) {
+		printf STDERR " *ERROR* line(%d), target(%s) in expression(%s), exiting\n", $., $var, $exp ;
+		exit(1) ;
+		}
+
+	foreach $key (sort(keys(%symbols))) {
+		if ($key eq $var) {
+			next ;
+			}
+		elsif ( $exp =~ / $key /) {
+			$exp =~ s/ $key / $symbols{$key} /g ;
+			}
+		}
+
+	$exp = eval($exp) ;
+	$pr = sprintf(" %.8f ", $exp) ;
+	if ( $pr =~ /\s[\-]*[0]+\.[0-9]+[1-9]+\s/ ) {
+		printf STDERR " *WARNING* line(%d), symbol (%s) has a fractional value,\n", $., $var ;
+		print STDERR "           ($pr), which will be truncated\n" ;
+		$warn++ ;
+		}
+	elsif ( $pr =~ /\s[\-]*[0-9]+\.[0-9]+[1-9]+\s/ ) {
+		printf STDERR " *WARNING* line(%d), symbol (%s) has a fractional part,\n", $., $var ;
+		print STDERR "           ($pr), which will be truncated\n" ;
+		$warn++ ;
+		}
+	return($exp) ;
+}
+#
+#
+#
+sub eval_operand {
+	local( $opcode, $var ) = ( @_ ) ;
+	local( $not_inst ) = 1 ;
+	local( $svar ) = $var ;
+
+		if (defined($inst{$var})) {
+			$var = $inst{$var} ;
+			$not_inst = 0 ;
+			}
+		elsif (defined($symbols{$var})) {
+			$var = $symbols{$var} ;
+			}
+		elsif ($var =~ /[\(\)\+\-\*\/\~\^\&\|]+/) {
+			$var = &eval_sym_exp( "eval_operand", $var ) ;
+			}
+		if (($var =~ /^0/) || ($var =~ /^0x/)) {
+			$var = oct($var) ;
+			}
+		#
+		# if this is an direct/indirect addressing instruction
+		#  mask operand if not a predefined inst symbol
+		#
+		if ($not_inst && defined($ind_inst{$opcode})) {
+			if ($var > 0x07f) {
+				printf STDERR " *WARNING* line(%d), symbol (%s) truncated to a width of 0x7f\n", $., $svar ;
+				$warn++ ;
+				}
+			$var &= 0x07f ;
+			}
+
+		return($var) ;
+}
+#
+#
+#
+sub check_line_syntax {
+	local( @var ) = ( @_ ) ;
+	local( $op ) = "NONE" ;
+	local( $msg ) ;
+
+	if (($var[1] =~ /:$/) && defined($var[3])) {
+		$op = $var[3] ;
+		}
+	elsif (($var[1] !~ /:$/) && (defined($var[2]))) {
+		$op = $var[2] ;
+		}
+	if (defined($one_op{$var[0]}) && ($op =~ /,/)) {
+		shift(@var) ;
+		$msg = join( ' ', (@var)) ;
+		$msg .= "\n    - only one operand allowed for this instruction" ;
+		&syntax_error( $msg ) ;
+		}
+	elsif (defined($zero_op{$var[0]}) && ($op ne "NONE")) {
+		shift(@var) ;
+		$msg = join( ' ', (@var)) ;
+		$msg .= "\n    - no operands allowed for this instruction" ;
+		&syntax_error( $msg ) ;
+		}
+	elsif (defined($one_op{$var[0]}) && !defined($zero_op{$var[0]}) &&
+           ($op eq "NONE")) {
+		shift(@var) ;
+		$msg = join( ' ', (@var)) ;
+		$msg .= "\n    - one operand required for this instruction" ;
+		&syntax_error( $msg ) ;
+		}
+	elsif (!defined($one_op{$var[0]}) && !defined($zero_op{$var[0]}) &&
+           ($op eq "NONE")) {
+		shift(@var) ;
+		$msg = join( ' ', (@var)) ;
+		$msg .= "\n    - one or more operands required for this instruction" ;
+		&syntax_error( $msg ) ;
+		}
+}
+#
+# evaluate operands for syntax
+#
+sub fix_mach {
+local(@o) = (@_) ;
+local($var) = "" ;
+local(@fix) ;
+
+if ($o[0] =~ /:$/) {
+	push(@fix,shift(@o)) ;
+	}
+
+push(@fix,shift(@o)) ;
+$var= &parse_operands(join(' ',@o)) ;
+
+if ($var ne "") {
+	push(@fix,$var) ;
+	}
+
+return(@fix);
+
+}
+#
+# parse and re-build operands
+#
+sub parse_operands {
+local($f) = pop(@_);
+local( @func ) ;
+local( $i ) ;
+local( $paren ) = 0 ;
+local( $oper, $op ) = ("", "") ;
+
+if ($f eq "") {
+	return "" ;
+	}
+
+#
+
+@func = split(//,$f) ; # split into characters
+
+for ($i=0; $i<length($f); $i++) {
+	# 
+	# walk the string
+	#
+	if (($func[$i] eq " ") && (($i+1)<length($f)) && (($i-1) >= 0)) {
+		if (($func[$i-1] =~ /\w/) && ($func[$i+1] =~ /\w/)) {
+			&syntax_error("multiple operands must be seperated by ',', '$line'") ;
+			}
+		elsif ($func[$i-1] =~ /[\(\)\+\-\*\/\~\^\&\|\<\>]/) {
+			$func[$i] = "" ;
+			}
+		elsif ($func[$i+1] =~ /[\(\)\+\-\*\/\~\^\&\|\<\>]/) {
+			$func[$i] = "" ;
+			}
+		next;
+		}
+	elsif ($func[$i] eq ",") {
+		$op = "" ;
+		$oper = "" ;
+		}
+	elsif ($func[$i] eq "(") {
+		$paren++ ;
+		}
+	elsif ($func[$i] eq ")") {
+		$paren-- ;
+		}
+	elsif ($func[$i] =~ /[\+\-\*\/\~\^\&\|\<\>]/) {
+		$oper .= $func[$i] ;
+		$op = "" ;
+		}
+	elsif ($func[$i] =~ /\w/) {
+		if (($oper eq "*-") || ($oper eq "*+")) {
+			&syntax_error("multiple operands must be seperated by ',', '$line'") ;
+			}
+		elsif (($paren == 0) && ($oper ne "")) {
+			&syntax_error("possible '(' or ')' for expression, or,\n\t',' missing for multiple operands, '$line'") ;
+			}
+		$oper = "" ;
+		$op .= $func[$i] ;
+		}
+	}
+	$f = join("", @func) ;
+
+	return($f);
+}

@@ -1,0 +1,237 @@
+#!/usr/bin/perl -w
+#
+# $Id: getop,v 1.1.1.1 2002/01/15 00:52:38 mai Exp $
+#
+# Author:  Mark A. Indovina
+#          Rochester, NY, USA
+#
+#------------------------------------------------
+#
+# "getop" ([ge]t [t]dsp [op]codes), this program:
+#   - searches source files for the
+#       keywords "start_of_opcodes" and "end_of_opcodes",
+#       everthing in between will be written to the file
+#       "op" as the source for opcode/machine attributes.
+#   - searches source files for embedded comments in the form of
+#       // asm:<opcode>
+#       this will identify opcodes that have hardware representations
+#
+#------------------------------------------------
+#
+if (!defined($ARGV[0])) {
+	die " usage: $0 <tdsp source files>\n" ;
+	}
+#
+$start_of_opcodes = 0 ;
+%asm_opcodes = () ;
+while (<>) {
+	chop;
+	$line = $_ ;
+	$line =~ s/^\s*// ;
+	$line =~ s/\s*$// ;
+	if ($line =~ /start_of_opcodes/) {
+		open( LIST, "> op") || die " Can't open 'op'" ;
+		$start_of_opcodes = 1 ;
+		next ;
+		}
+	elsif ($start_of_opcodes && ($line =~ /end_of_opcodes/)) {
+		close( LIST ) ;
+		$start_of_opcodes = 0 ;
+		next ;
+		}
+	elsif ($start_of_opcodes) {
+		print LIST "$line\n" ;
+		next ;
+		}
+	elsif ($line =~ /\/\/ asm:(.+)/) {
+		$asm_opcodes{$1} = 1 ;
+		}
+}
+#
+open( LIST, "op") || die " Can't open 'op'" ;
+#
+%opcodes = () ;
+while (<LIST>) {
+	chop;
+	$line = $_ ;
+	$line =~ s/^\s+//g ;
+	if (($line =~ /^;/) || (length($line) == 0)) {
+		next ;
+		}
+	$line =~ s/\/\/.*$//g ;
+	$line =~ s/\s+$//g ;
+	$line =~ s/\s+/ /g ;
+	$line =~ s/`OP'h/0x/g ;
+	$line =~ s/16'h/0x/g ;
+	$line =~ s/`TP'h/0x/g ;
+	$line =~ s/8'h/0x/g ;
+	if ($line =~ /^(.+)\s(.+)\s(.+)/) {
+		($key, $val) = ( $2, $3 ) ;
+		if (!defined($asm_opcodes{$key})) {
+			printf STDERR
+				"opcode '%s' not found in source files, ignoring\n", $key ;
+			next ;
+			}
+		$val = hex($val) ;
+		if ( $val <= 0x0ff ) {
+			$opcodes{ $key } = $val * 0x0100 ;
+			}
+		elsif ( $val <= 0x0fff ) {
+			$opcodes{ $key } = $val * 0x0010 ;
+			}
+		else {
+			$opcodes{ $key } = $val ;
+			}
+		next ;
+		}
+	next ;
+}
+close( LIST ) ;
+open( OPCODES, "> opcodes.pl") || die " Can't open 'opcodes.pl'" ;
+
+print OPCODES <<EOF ;
+#
+# instructions
+# tr/A-Z/a-z/
+#
+%inst = (
+EOF
+
+#
+foreach $key (sort(keys(%opcodes))) {
+    print OPCODES "    \"$key\", ".$opcodes{ $key }.",\n" ;
+	$var = $key ;
+	$var =~ tr/A-Z/a-z/ ;
+    print OPCODES "    \"$var\", ".$opcodes{ $key }.",\n" ;
+    }
+#
+print OPCODES <<EOF ;
+    "AR0", 0,
+    "ar0", 0,
+    "AR1", 1,
+    "ar1", 1,
+    "PA0", 0x0,
+    "pa0", 0x0,
+    "PA1", 0x1,
+    "pa1", 0x1,
+    "PA2", 0x2,
+    "pa2", 0x2,
+    "PA3", 0x3,
+    "pa3", 0x3,
+    "PA4", 0x4,
+    "pa4", 0x4,
+    "PA5", 0x5,
+    "pa5", 0x5,
+    "PA6", 0x6,
+    "pa6", 0x6,
+    "PA7", 0x7,
+    "pa7", 0x7,
+    "*", 0x88,
+    "*+", 0xa8,
+    "*-", 0x98,
+    ".AORG", 0,
+    ".aorg", 0,
+    ".DATA", 0,
+    ".data", 0,
+    "DUMMY_INST", 0,
+    "END_OF_INST", -1
+    ) ;
+EOF
+
+print OPCODES <<EOF ;
+#
+# instruction size
+#
+%inst_size = (
+EOF
+
+#
+foreach $key (sort(keys(%opcodes))) {
+	if ($key =~ /^B/) {
+    	print OPCODES "    \"$key\", 2,\n" ;
+		}
+	elsif ($key =~ /^CALL/) {
+    	print OPCODES "    \"$key\", 2,\n" ;
+		}
+	else {
+    	print OPCODES "    \"$key\", 1,\n" ;
+		}
+	$var = $key ;
+	$var =~ tr/A-Z/a-z/ ;
+	if ($var =~ /^b/) {
+    	print OPCODES "    \"$var\", 2,\n" ;
+		}
+	elsif ($var =~ /^call/) {
+    	print OPCODES "    \"$var\", 2,\n" ;
+		}
+	else {
+    	print OPCODES "    \"$var\", 1,\n" ;
+    	}
+    }
+#
+print OPCODES <<EOF ;
+    "AR0", 0,
+    "ar0", 0,
+    "AR1", 0,
+    "ar1", 0,
+    "PA0", 0,
+    "pa0", 0,
+    "PA1", 0,
+    "pa1", 0,
+    "PA2", 0,
+    "pa2", 0,
+    "PA3", 0,
+    "pa3", 0,
+    "PA4", 0,
+    "pa4", 0,
+    "PA5", 0,
+    "pa5", 0,
+    "PA6", 0,
+    "pa6", 0,
+    "PA7", 0,
+    "pa7", 0,
+    "*", 0,
+    "*+", 0,
+    "*-", 0,
+    ".AORG", 0,
+    ".aorg", 0,
+    ".DATA", 1,
+    ".data", 1,
+    "DUMMY_INST", 0,
+    "END_OF_INST", -1
+    ) ;
+
+EOF
+#
+# create initial symbol table
+#
+print OPCODES <<EOF ;
+#
+# symbols
+#
+%symbols = (
+    "AR0", 0,
+    "ar0", 0,
+    "AR1", 1,
+    "ar1", 1,
+    "PA0", 0x0,
+    "pa0", 0x0,
+    "PA1", 0x1,
+    "pa1", 0x1,
+    "PA2", 0x2,
+    "pa2", 0x2,
+    "PA3", 0x3,
+    "pa3", 0x3,
+    "PA4", 0x4,
+    "pa4", 0x4,
+    "PA5", 0x5,
+    "pa5", 0x5,
+    "PA6", 0x6,
+    "pa6", 0x6,
+    "PA7", 0x7,
+    "pa7", 0x7,
+    ) ;
+EOF
+#
+close(OPCODES) ;
+exit(0);

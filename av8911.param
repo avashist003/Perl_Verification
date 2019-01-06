@@ -1,0 +1,4 @@
+	width = 10;
+	reset		=    0xf;
+	stages = 4;
+   outfile = 	av.v	;

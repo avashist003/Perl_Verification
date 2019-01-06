@@ -1,0 +1,432 @@
+/*
+ *      CONFIDENTIAL AND PROPRIETARY SOFTWARE/DATA OF ARTISAN COMPONENTS, INC.
+ *      
+ *      Copyright (c) 2002 Artisan Components, Inc.  All Rights Reserved.
+ *      
+ *      Use of this Software/Data is subject to the terms and conditions of
+ *      the applicable license agreement between Artisan Components, Inc. and
+ *      Taiwan Semiconductor Manufacturing Ltd..  In addition, this Software/Data
+ *      is protected by copyright law and international treaties.
+ *      
+ *      The copyright notice(s) in this Software/Data does not indicate actual
+ *      or intended publication of this Software/Data.
+ *
+ *      Synopsys model for Synchronous Single-Port Ram
+ *
+ *      Library Name:   aci
+ *      Instance Name:  ram_16x16
+ *      Words:          16
+ *      Word Width:     16
+ *      Mux:            4
+ *      Pipeline:       No
+ *      Process:        slow
+ *      Delays:		max
+ *
+ *      Creation Date:  2002-01-13 20:14:42Z
+ *      Version:        2000Q3V1
+ *
+ *      Verified With: Synopsys Primetime
+ *
+ *      Modeling Assumptions: This library contains a black box description
+ *          for a memory element.  At the library level, a
+ *          default_max_transition constraint is set to the maximum
+ *          characterized input slew.  Each output has a max_capacitance
+ *          constraint set to the highest characterized output load.
+ *          Different modes are defined in order to disable false path
+ *          during the specific mode activation when doing static timing analysis. 
+ *
+ *
+ *      Modeling Limitations: This stamp does not include power information.
+ *          Due to limitations of the stamp modeling, some data reduction was
+ *          necessary.  When reducing data, minimum values were chosen for the
+ *          fast case corner and maximum values were used for the typical and
+ *          best case corners.  It is recommended that critical timing and
+ *          setup and hold times be checked at all corners.
+ *
+ *      Known Bugs: None.
+ *
+ *      Known Work Arounds: N/A
+ *
+ */
+
+MODELDATA
+OPERATING_CONDITION "slow";
+DESIGN              "ram_16x16";
+
+CELLDATA
+area                   : 32410.222;
+default_max_transition : 4.000;
+ENDCELLDATA
+
+PORTDATA
+Q[15:0] : CAP(0.020), MAXCAP(2.220);
+A[3:0] : CAP(0.052);
+CEN : CAP(0.014);
+CLK : CAP(0.130), MAXTRANS(4.000);
+D[15:0] : CAP(0.005);
+WEN : CAP(0.015);
+OEN : CAP(0.010);
+ENDPORTDATA
+
+TIMINGDATA
+GLOBAL
+        lu_table_template(ram_16x16_delay_template) {
+           variable_1 : input_net_transition;
+           variable_2 : total_output_net_capacitance;
+               index_1 ("1000, 1001, 1002, 1003, 1004");
+               index_2 ("1000, 1001, 1002, 1003, 1004");
+        }
+	lu_table_template(ram_16x16_constraint_template) {
+           variable_1 : related_pin_transition;
+           variable_2 : constrained_pin_transition;
+               index_1 ("1000, 1001, 1002, 1003, 1004");
+               index_2 ("1000, 1001, 1002, 1003, 1004");
+        }
+	lu_table_template(ram_16x16_load_template) {
+           variable_1 : total_output_net_capacitance;
+               index_1 ("1000, 1001, 1002, 1003, 1004");
+        }
+ENDGLOBAL
+
+
+ARCDATA
+tch_tas:
+			rise_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.435, 0.443, 0.459, 0.490, 0.509", \
+			  "0.371, 0.379, 0.394, 0.425, 0.445", \
+			  "0.242, 0.250, 0.265, 0.297, 0.316", \
+			  "0.000, 0.000, 0.008, 0.039, 0.059", \
+			  "0.000, 0.000, 0.000, 0.000, 0.000" \
+			)
+			}
+			fall_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.435, 0.443, 0.459, 0.490, 0.509", \
+			  "0.371, 0.379, 0.394, 0.425, 0.445", \
+			  "0.242, 0.250, 0.265, 0.297, 0.316", \
+			  "0.000, 0.000, 0.008, 0.039, 0.059", \
+			  "0.000, 0.000, 0.000, 0.000, 0.000" \
+			)
+			}
+ENDARCDATA
+
+ARCDATA
+tch_tah:
+			rise_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.098, 0.091, 0.075, 0.044, 0.025", \
+			  "0.163, 0.155, 0.140, 0.108, 0.089", \
+			  "0.292, 0.284, 0.268, 0.237, 0.218", \
+			  "0.549, 0.541, 0.526, 0.495, 0.475", \
+			  "0.710, 0.702, 0.687, 0.655, 0.636" \
+			)
+			}
+			fall_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.098, 0.091, 0.075, 0.044, 0.025", \
+			  "0.163, 0.155, 0.140, 0.108, 0.089", \
+			  "0.292, 0.284, 0.268, 0.237, 0.218", \
+			  "0.549, 0.541, 0.526, 0.495, 0.475", \
+			  "0.710, 0.702, 0.687, 0.655, 0.636" \
+			)
+			}
+ENDARCDATA
+
+ARCDATA
+tch_tcs:
+			rise_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.499, 0.510, 0.533, 0.685, 0.780", \
+			  "0.435, 0.446, 0.469, 0.621, 0.716", \
+			  "0.306, 0.317, 0.340, 0.492, 0.587", \
+			  "0.049, 0.060, 0.082, 0.234, 0.330", \
+			  "0.000, 0.000, 0.000, 0.074, 0.169" \
+			)
+			}
+			fall_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.499, 0.510, 0.533, 0.685, 0.780", \
+			  "0.435, 0.446, 0.469, 0.621, 0.716", \
+			  "0.306, 0.317, 0.340, 0.492, 0.587", \
+			  "0.049, 0.060, 0.082, 0.234, 0.330", \
+			  "0.000, 0.000, 0.000, 0.074, 0.169" \
+			)
+			}
+ENDARCDATA
+
+ARCDATA
+tch_tch:
+			rise_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.015, 0.004, 0.000, 0.000, 0.000", \
+			  "0.144, 0.133, 0.110, 0.065, 0.037", \
+			  "0.401, 0.390, 0.368, 0.322, 0.294", \
+			  "0.562, 0.551, 0.528, 0.483, 0.455" \
+			)
+			}
+			fall_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.015, 0.004, 0.000, 0.000, 0.000", \
+			  "0.144, 0.133, 0.110, 0.065, 0.037", \
+			  "0.401, 0.390, 0.368, 0.322, 0.294", \
+			  "0.562, 0.551, 0.528, 0.483, 0.455" \
+			)
+			}
+ENDARCDATA
+
+ARCDATA
+tch_tds:
+			rise_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.287, 0.300, 0.342, 0.549, 0.677", \
+			  "0.222, 0.236, 0.278, 0.484, 0.613", \
+			  "0.094, 0.107, 0.149, 0.356, 0.484", \
+			  "0.000, 0.000, 0.000, 0.098, 0.227", \
+			  "0.000, 0.000, 0.000, 0.000, 0.066" \
+			)
+			}
+			fall_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.287, 0.300, 0.342, 0.549, 0.677", \
+			  "0.222, 0.236, 0.278, 0.484, 0.613", \
+			  "0.094, 0.107, 0.149, 0.356, 0.484", \
+			  "0.000, 0.000, 0.000, 0.098, 0.227", \
+			  "0.000, 0.000, 0.000, 0.000, 0.066" \
+			)
+			}
+ENDARCDATA
+
+ARCDATA
+tch_tdh:
+			rise_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.022, 0.000, 0.000, 0.000, 0.000", \
+			  "0.150, 0.099, 0.000, 0.000, 0.000", \
+			  "0.408, 0.356, 0.253, 0.170, 0.136", \
+			  "0.569, 0.517, 0.414, 0.331, 0.297" \
+			)
+			}
+			fall_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.022, 0.000, 0.000, 0.000, 0.000", \
+			  "0.150, 0.099, 0.000, 0.000, 0.000", \
+			  "0.408, 0.356, 0.253, 0.170, 0.136", \
+			  "0.569, 0.517, 0.414, 0.331, 0.297" \
+			)
+			}
+ENDARCDATA
+
+ARCDATA
+tch_tws:
+			rise_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.508, 0.550, 0.635, 0.806, 0.912", \
+			  "0.443, 0.486, 0.571, 0.741, 0.848", \
+			  "0.315, 0.357, 0.442, 0.613, 0.719", \
+			  "0.106, 0.125, 0.185, 0.355, 0.462", \
+			  "0.106, 0.125, 0.164, 0.325, 0.432" \
+			)
+			}
+			fall_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.508, 0.550, 0.635, 0.806, 0.912", \
+			  "0.443, 0.486, 0.571, 0.741, 0.848", \
+			  "0.315, 0.357, 0.442, 0.613, 0.719", \
+			  "0.106, 0.125, 0.185, 0.355, 0.462", \
+			  "0.106, 0.125, 0.164, 0.325, 0.432" \
+			)
+			}
+ENDARCDATA
+
+ARCDATA
+tch_twh:
+			rise_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.121, 0.078, 0.000, 0.000, 0.000", \
+			  "0.378, 0.336, 0.251, 0.137, 0.089", \
+			  "0.539, 0.497, 0.411, 0.298, 0.250" \
+			)
+			}
+			fall_constraint(ram_16x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.121, 0.078, 0.000, 0.000, 0.000", \
+			  "0.378, 0.336, 0.251, 0.137, 0.089", \
+			  "0.539, 0.497, 0.411, 0.298, 0.250" \
+			)
+			}
+ENDARCDATA
+
+ARCDATA
+period_tcyc:
+			rise_constraint(scalar) {
+				values ("1.619")
+			}
+			fall_constraint(scalar) {
+				values ("1.619")
+			}
+ENDARCDATA
+
+ARCDATA
+tpw_tckl:
+			rise_constraint(scalar) {
+				values ("0.260")
+			}
+			fall_constraint(scalar) {
+				values ("0.260")
+			}
+ENDARCDATA
+
+ARCDATA
+tpw_tckh:
+			rise_constraint(scalar) {
+				values ("0.183")
+			}
+			fall_constraint(scalar) {
+				values ("0.183")
+			}
+ENDARCDATA
+
+ARCDATA
+dly_tya:
+			cell_rise(ram_16x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ( \
+			  "1.710, 1.861, 2.018, 2.327, 2.944", \
+			  "1.774, 1.926, 2.083, 2.391, 3.008", \
+			  "1.903, 2.054, 2.211, 2.520, 3.137", \
+			  "2.160, 2.312, 2.469, 2.777, 3.394", \
+			  "2.321, 2.473, 2.630, 2.938, 3.555" \
+			)
+			}
+			rise_transition(ram_16x16_load_template) {
+			index_1 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ("0.092, 0.430, 0.779, 1.467, 2.841")
+			}
+			cell_fall(ram_16x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ( \
+			  "1.712, 1.797, 1.885, 2.057, 2.403", \
+			  "1.776, 1.861, 1.949, 2.122, 2.467", \
+			  "1.905, 1.990, 2.078, 2.250, 2.596", \
+			  "2.162, 2.247, 2.335, 2.508, 2.853", \
+			  "2.323, 2.408, 2.496, 2.669, 3.014" \
+			)
+			}
+			fall_transition(ram_16x16_load_template) {
+			index_1 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ("0.049, 0.212, 0.381, 0.712, 1.375")
+			}
+ENDARCDATA
+
+ARCDATA
+dly_tlzl:
+			cell_rise(ram_16x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ( \
+			  "0.857, 0.910, 1.067, 1.376, 1.993", \
+			  "0.887, 0.961, 1.118, 1.426, 2.043", \
+			  "0.947, 1.063, 1.220, 1.528, 2.145", \
+			  "1.115, 1.266, 1.424, 1.732, 2.349", \
+			  "1.242, 1.394, 1.551, 1.859, 2.476" \
+			)
+			}
+			rise_transition(ram_16x16_load_template) {
+			index_1 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ("0.092, 0.430, 0.779, 1.467, 2.841")
+			}
+			cell_fall(ram_16x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ( \
+			  "0.857, 0.857, 0.867, 1.040, 1.385", \
+			  "0.887, 0.887, 0.918, 1.091, 1.436", \
+			  "0.947, 0.947, 1.020, 1.193, 1.538", \
+			  "1.066, 1.136, 1.224, 1.396, 1.742", \
+			  "1.178, 1.263, 1.351, 1.524, 1.869" \
+			)
+			}
+			fall_transition(ram_16x16_load_template) {
+			index_1 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ("0.049, 0.212, 0.381, 0.712, 1.375")
+			}
+ENDARCDATA
+
+ARCDATA
+dly_tlzh:
+			cell_rise(ram_16x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ( \
+			  "0.857, 0.910, 1.067, 1.376, 1.993", \
+			  "0.887, 0.961, 1.118, 1.426, 2.043", \
+			  "0.947, 1.063, 1.220, 1.528, 2.145", \
+			  "1.115, 1.266, 1.424, 1.732, 2.349", \
+			  "1.242, 1.394, 1.551, 1.859, 2.476" \
+			)
+			}
+			rise_transition(ram_16x16_load_template) {
+			index_1 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ("0.092, 0.430, 0.779, 1.467, 2.841")
+			}
+			cell_fall(ram_16x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ( \
+			  "0.857, 0.857, 0.867, 1.040, 1.385", \
+			  "0.887, 0.887, 0.918, 1.091, 1.436", \
+			  "0.947, 0.947, 1.020, 1.193, 1.538", \
+			  "1.066, 1.136, 1.224, 1.396, 1.742", \
+			  "1.178, 1.263, 1.351, 1.524, 1.869" \
+			)
+			}
+			fall_transition(ram_16x16_load_template) {
+			index_1 ("0.000, 0.270, 0.550, 1.100, 2.200");
+			values ("0.049, 0.212, 0.381, 0.712, 1.375")
+			}
+ENDARCDATA
+ENDTIMINGDATA
+ENDMODELDATA

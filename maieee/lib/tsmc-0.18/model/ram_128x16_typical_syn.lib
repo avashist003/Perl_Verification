@@ -1,0 +1,581 @@
+/*
+ *      CONFIDENTIAL AND PROPRIETARY SOFTWARE/DATA OF ARTISAN COMPONENTS, INC.
+ *      
+ *      Copyright (c) 2002 Artisan Components, Inc.  All Rights Reserved.
+ *      
+ *      Use of this Software/Data is subject to the terms and conditions of
+ *      the applicable license agreement between Artisan Components, Inc. and
+ *      Taiwan Semiconductor Manufacturing Ltd..  In addition, this Software/Data
+ *      is protected by copyright law and international treaties.
+ *      
+ *      The copyright notice(s) in this Software/Data does not indicate actual
+ *      or intended publication of this Software/Data.
+ *
+ *      Synopsys model for Synchronous Single-Port Ram
+ *
+ *      Library Name:   ram_128x16_typical
+ *      Instance Name:  ram_128x16
+ *      Words:          128
+ *      Word Width:     16
+ *      Mux:            4
+ *      Pipeline:       No
+ *      Process:        typical
+ *      Delays:		max
+ *
+ *      Creation Date:  2002-01-13 20:13:10Z
+ *      Version:        2000Q3V1
+ *
+ *      Verified With: Synopsys Design Compiler
+ *
+ *      Modeling Assumptions: This library contains a black box description
+ *          for a memory element.  At the library level, a
+ *          default_max_transition constraint is set to the maximum
+ *          characterized input slew.  Each output has a max_capacitance
+ *          constraint set to the highest characterized output load.  These two
+ *          constraints force Design Compiler to synthesize circuits that
+ *          operate within the characterization space.  The user can tighten
+ *          these constraints, if desired.  When writing SDF from Design
+ *          Compiler, use the version 2.1 option.  This ensures the SDF will
+ *          annotate to simulation models provided with this generator.
+ *
+ *      Modeling Limitations: 
+ *          Due to limitations of the .lib format, some data reduction was
+ *          necessary.  When reducing data, minimum values were chosen for the
+ *          fast case corner and maximum values were used for the typical and
+ *          best case corners.  It is recommended that critical timing and
+ *          setup and hold times be checked at all corners.
+ *
+ *      Known Bugs: None.
+ *
+ *      Known Work Arounds: N/A
+ *
+ */
+
+library(ram_128x16_typical) {
+	delay_model		: table_lookup;
+	revision		: 1.1;	
+	date			: "2002-01-13 20:13:10Z";
+	comment			: "Confidential Information of Artisan Components, Inc.  Use subject to Artisan Components license. Copyright (c) 2002 Artisan Components, Inc.";
+	time_unit		: "1ns";
+	voltage_unit		: "1V";
+	current_unit		: "1mA";
+	leakage_power_unit	: "1mW";
+	nom_process		: 1;
+	nom_temperature		: 25.000;
+	nom_voltage		: 1.800;
+	capacitive_load_unit	 (1,pf);
+
+	pulling_resistance_unit	        : "1kohm";
+
+	/* additional header data */
+        default_cell_leakage_power      : 0;
+	default_fanout_load		: 1;
+	default_inout_pin_cap		: 0.0035;
+	default_input_pin_cap		: 0.0035;
+	default_output_pin_cap		: 0.0;
+	default_max_transition		: 4.000;
+
+ 	/* k-factors */
+ 	k_process_cell_fall             : 1;
+ 	k_process_cell_leakage_power    : 0;
+ 	k_process_cell_rise             : 1;
+ 	k_process_fall_transition       : 1;
+ 	k_process_hold_fall             : 1;
+ 	k_process_hold_rise             : 1;
+ 	k_process_internal_power        : 0;
+ 	k_process_min_pulse_width_high  : 1;
+ 	k_process_min_pulse_width_low   : 1;
+ 	k_process_pin_cap               : 0;
+ 	k_process_recovery_fall         : 1;
+ 	k_process_recovery_rise         : 1;
+ 	k_process_rise_transition       : 1;
+ 	k_process_setup_fall            : 1;
+ 	k_process_setup_rise            : 1;
+ 	k_process_wire_cap              : 0;
+ 	k_process_wire_res              : 0;
+	k_temp_cell_fall		: 0.00137;
+	k_temp_cell_rise		: 0.00137;
+	k_temp_hold_fall                : 0.00137;
+	k_temp_hold_rise                : 0.00137;
+	k_temp_min_pulse_width_high     : 0.00137;
+	k_temp_min_pulse_width_low      : 0.00137;
+	k_temp_min_period               : 0.00137;
+	k_temp_rise_propagation         : 0.00137;
+	k_temp_fall_propagation         : 0.00137;
+	k_temp_rise_transition          : 0.0;
+	k_temp_fall_transition          : 0.0;
+	k_temp_recovery_fall            : 0.00137;
+	k_temp_recovery_rise            : 0.00137;
+	k_temp_setup_fall               : 0.00137;
+	k_temp_setup_rise               : 0.00137;
+	k_volt_cell_fall                : -0.73123;
+	k_volt_cell_rise                : -0.73123;
+	k_volt_hold_fall                : -0.73123;
+	k_volt_hold_rise                : -0.73123;
+	k_volt_min_pulse_width_high     : -0.73123;
+	k_volt_min_pulse_width_low      : -0.73123;
+	k_volt_min_period               : -0.73123;
+	k_volt_rise_propagation         : -0.73123;
+	k_volt_fall_propagation         : -0.73123;
+	k_volt_rise_transition	        : 0.0;
+	k_volt_fall_transition	        : 0.0;
+	k_volt_recovery_fall            : -0.73123;
+	k_volt_recovery_rise            : -0.73123;
+	k_volt_setup_fall               : -0.73123;
+	k_volt_setup_rise               : -0.73123;
+	operating_conditions(typical) {
+		process	 : 1;
+		temperature	 : 25.000;
+		voltage	 : 1.800;
+		tree_type	 : balanced_tree;
+	}
+        default_operating_conditions : typical;
+	wire_load("sample") {
+		resistance	 : 1.6e-05;
+		capacitance	 : 0.0002;
+		area	 : 1.7;
+  		slope	 : 500;
+		fanout_length	 (1,500);
+	}
+	output_voltage(GENERAL) {
+		vol	 : 0.4;
+		voh	 : VDD - 0.4;
+		vomin	 : -0.5;
+		vomax	 : VDD + 0.5;
+	}
+	input_voltage(CMOS) {
+		vil	 : 0.3 * VDD;
+		vih	 : 0.7 * VDD;
+		vimin	 : -0.5;
+		vimax	 : VDD + 0.5;
+	}
+	input_voltage(TTL) {
+		vil	 : 0.8;
+		vih	 : 2;
+		vimin	 : -0.5;
+		vimax	 : VDD + 0.5;
+	}
+        lu_table_template(ram_128x16_delay_template) {
+           variable_1 : input_net_transition;
+           variable_2 : total_output_net_capacitance;
+               index_1 ("1000, 1001, 1002, 1003, 1004");
+               index_2 ("1000, 1001, 1002, 1003, 1004");
+        }
+	lu_table_template(ram_128x16_constraint_template) {
+           variable_1 : related_pin_transition;
+           variable_2 : constrained_pin_transition;
+               index_1 ("1000, 1001, 1002, 1003, 1004");
+               index_2 ("1000, 1001, 1002, 1003, 1004");
+        }
+	lu_table_template(ram_128x16_load_template) {
+           variable_1 : total_output_net_capacitance;
+               index_1 ("1000, 1001, 1002, 1003, 1004");
+        }
+        power_lut_template(ram_128x16_passive_energy_template_1x2) {
+           variable_1 : input_transition_time;
+               index_1 ("1000, 1001");
+        }
+	library_features(report_delay_calculation);
+	type (ram_128x16_DATA) {
+		base_type : array ;
+		data_type : bit ;
+		bit_width : 16;
+		bit_from : 15;
+		bit_to : 0 ;
+		downto : true ;
+	}
+	type (ram_128x16_ADDRESS) {
+		base_type : array ;
+		data_type : bit ;
+		bit_width : 7;
+		bit_from : 6;
+		bit_to : 0 ;
+		downto : true ;
+	}
+cell(ram_128x16) {
+	area		 : 48994.500;
+	dont_use	 : TRUE;
+	dont_touch	 : TRUE;
+        interface_timing : TRUE;
+	memory() {
+		type : ram;
+		address_width : 7;
+		word_width : 16;
+	}
+	bus(Q)	 {
+		bus_type : ram_128x16_DATA;
+		direction : output;
+		max_capacitance : 2.221;
+		capacitance : 0.021;
+                three_state : "OEN" ;
+                memory_read() {
+			address : A;
+		}
+		timing() {
+			related_pin :	"CLK" ;
+			timing_type : rising_edge;
+			timing_sense : non_unate;
+			cell_rise(ram_128x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ( \
+			  "1.044, 1.147, 1.253, 1.462, 1.880", \
+			  "1.073, 1.175, 1.282, 1.491, 1.908", \
+			  "1.130, 1.233, 1.339, 1.548, 1.966", \
+			  "1.244, 1.347, 1.453, 1.662, 2.080", \
+			  "1.316, 1.418, 1.525, 1.734, 2.151" \
+			)
+			}
+			rise_transition(ram_128x16_load_template) {
+			index_1 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ("0.072, 0.311, 0.558, 1.044, 2.015")
+			}
+			cell_fall(ram_128x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ( \
+			  "1.046, 1.102, 1.160, 1.273, 1.499", \
+			  "1.075, 1.131, 1.188, 1.301, 1.528", \
+			  "1.132, 1.188, 1.245, 1.359, 1.585", \
+			  "1.247, 1.302, 1.360, 1.473, 1.699", \
+			  "1.318, 1.374, 1.431, 1.544, 1.771" \
+			)
+			}
+			fall_transition(ram_128x16_load_template) {
+			index_1 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ("0.039, 0.145, 0.254, 0.468, 0.897")
+		}	}
+		timing() {
+			related_pin :	"OEN" ;
+                        timing_type : three_state_disable ;
+			timing_sense : non_unate;
+
+			cell_rise(ram_128x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ( \
+			  "0.551, 0.593, 0.700, 0.909, 1.326", \
+			  "0.554, 0.646, 0.753, 0.961, 1.379", \
+			  "0.649, 0.752, 0.858, 1.067, 1.485", \
+			  "0.860, 0.963, 1.069, 1.278, 1.696", \
+			  "0.992, 1.095, 1.201, 1.410, 1.828" \
+			)
+                       }
+			rise_transition(ram_128x16_load_template) {
+			index_1 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ("0.072, 0.311, 0.558, 1.044, 2.015")
+			}
+			cell_fall(ram_128x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ( \
+			  "0.551, 0.551, 0.560, 0.673, 0.900", \
+			  "0.554, 0.555, 0.613, 0.726, 0.953", \
+			  "0.605, 0.661, 0.719, 0.832, 1.058", \
+			  "0.817, 0.872, 0.930, 1.043, 1.269", \
+			  "0.949, 1.004, 1.062, 1.175, 1.401" \
+			)
+			}
+			fall_transition(ram_128x16_load_template) {
+			index_1 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ("0.039, 0.145, 0.254, 0.468, 0.897")
+		}	}
+		timing() {
+			related_pin :	"OEN" ;
+			timing_sense : non_unate;
+                        timing_type : three_state_enable ;
+
+			cell_rise(ram_128x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ( \
+			  "0.551, 0.593, 0.700, 0.909, 1.326", \
+			  "0.554, 0.646, 0.753, 0.961, 1.379", \
+			  "0.649, 0.752, 0.858, 1.067, 1.485", \
+			  "0.860, 0.963, 1.069, 1.278, 1.696", \
+			  "0.992, 1.095, 1.201, 1.410, 1.828" \
+			)
+                       }
+			rise_transition(ram_128x16_load_template) {
+			index_1 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ("0.072, 0.311, 0.558, 1.044, 2.015")
+			}
+			cell_fall(ram_128x16_delay_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ( \
+			  "0.551, 0.551, 0.560, 0.673, 0.900", \
+			  "0.554, 0.555, 0.613, 0.726, 0.953", \
+			  "0.605, 0.661, 0.719, 0.832, 1.058", \
+			  "0.817, 0.872, 0.930, 1.043, 1.269", \
+			  "0.949, 1.004, 1.062, 1.175, 1.401" \
+			)
+			}
+			fall_transition(ram_128x16_load_template) {
+			index_1 ("0.021, 0.291, 0.571, 1.121, 2.221");
+			values ("0.039, 0.145, 0.254, 0.468, 0.897")
+		}	}
+        }
+
+	pin(CLK) {
+		direction : input;
+		capacitance : 0.165
+		clock	: true;
+		min_pulse_width_low	: 0.154;
+		min_pulse_width_high	: 0.108;
+		min_period		: 0.993;
+		max_transition		: 4.000;
+		internal_power(){
+			when : "CEN";
+			power(ram_128x16_passive_energy_template_1x2) {
+				index_1 ("0.0 1.0");
+	    			values ("0.000, 0.000")
+			}	
+		}
+		internal_power(){
+			when : "!CEN & WEN";
+        		power(ram_128x16_passive_energy_template_1x2) {
+				index_1 ("0.0 1.0");
+            			values ("85.271, 85.271")
+        		}
+		}
+		internal_power(){
+			when : "!CEN & !WEN";
+			power(ram_128x16_passive_energy_template_1x2) {
+	    			index_1 ("0.0 1.0");
+	    			values ("92.282, 92.282")
+			}	
+		}
+	}
+
+	pin(CEN) {
+		direction : input;
+		capacitance : 0.014;
+		timing() {
+			related_pin	: "CLK" ;
+			timing_type	: setup_rising ;
+			rise_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.317, 0.307, 0.391, 0.568, 0.679", \
+			  "0.289, 0.279, 0.362, 0.539, 0.650", \
+			  "0.231, 0.222, 0.305, 0.482, 0.593", \
+			  "0.117, 0.107, 0.191, 0.368, 0.478", \
+			  "0.045, 0.036, 0.119, 0.296, 0.407" \
+			)
+			}
+			fall_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.317, 0.307, 0.391, 0.568, 0.679", \
+			  "0.289, 0.279, 0.362, 0.539, 0.650", \
+			  "0.231, 0.222, 0.305, 0.482, 0.593", \
+			  "0.117, 0.107, 0.191, 0.368, 0.478", \
+			  "0.045, 0.036, 0.119, 0.296, 0.407" \
+			)
+		}	}
+		timing() {
+			related_pin	: "CLK" ;
+			timing_type	: hold_rising ;
+			rise_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.037, 0.062", \
+			  "0.000, 0.007, 0.027, 0.066, 0.090", \
+			  "0.055, 0.064, 0.084, 0.123, 0.148", \
+			  "0.169, 0.179, 0.198, 0.237, 0.262", \
+			  "0.241, 0.250, 0.270, 0.309, 0.333" \
+			)
+				
+			}
+			fall_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.037, 0.062", \
+			  "0.000, 0.007, 0.027, 0.066, 0.090", \
+			  "0.055, 0.064, 0.084, 0.123, 0.148", \
+			  "0.169, 0.179, 0.198, 0.237, 0.262", \
+			  "0.241, 0.250, 0.270, 0.309, 0.333" \
+			)
+	}	}	}
+
+
+	pin(OEN)	{
+		direction	 : input;
+		capacitance : 0.010;
+	}
+	pin(WEN) {
+		direction : input;
+		capacitance : 0.015;
+		timing() {
+			related_pin	: "CLK" ;
+			timing_type	: setup_rising ;
+			rise_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.317, 0.364, 0.457, 0.644, 0.761", \
+			  "0.288, 0.335, 0.429, 0.616, 0.733", \
+			  "0.231, 0.278, 0.371, 0.558, 0.675", \
+			  "0.117, 0.163, 0.257, 0.444, 0.561", \
+			  "0.057, 0.092, 0.185, 0.373, 0.489" \
+			)
+			}
+			fall_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.317, 0.364, 0.457, 0.644, 0.761", \
+			  "0.288, 0.335, 0.429, 0.616, 0.733", \
+			  "0.231, 0.278, 0.371, 0.558, 0.675", \
+			  "0.117, 0.163, 0.257, 0.444, 0.561", \
+			  "0.057, 0.092, 0.185, 0.373, 0.489" \
+			)
+		}	}
+		timing() {
+			related_pin	: "CLK" ;
+			timing_type	: hold_rising ;
+			rise_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.042, 0.005, 0.011, 0.023, 0.030", \
+			  "0.157, 0.120, 0.126, 0.137, 0.144", \
+			  "0.228, 0.191, 0.197, 0.209, 0.216" \
+			)
+			}
+			fall_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.000, 0.000, 0.000, 0.000, 0.000", \
+			  "0.042, 0.005, 0.011, 0.023, 0.030", \
+			  "0.157, 0.120, 0.126, 0.137, 0.144", \
+			  "0.228, 0.191, 0.197, 0.209, 0.216" \
+			)
+	}	}	}
+
+	bus(A)  {
+		bus_type : ram_128x16_ADDRESS;
+		direction : input;
+		capacitance : 0.052;
+		timing() {
+			related_pin	: "CLK"
+			timing_type	: setup_rising ;
+			rise_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.277, 0.267, 0.248, 0.336, 0.419", \
+			  "0.248, 0.239, 0.220, 0.307, 0.391", \
+			  "0.191, 0.181, 0.163, 0.250, 0.333", \
+			  "0.076, 0.067, 0.048, 0.136, 0.219", \
+			  "0.005, 0.000, 0.000, 0.064, 0.147" \
+			)
+			}
+			fall_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.277, 0.267, 0.248, 0.336, 0.419", \
+			  "0.248, 0.239, 0.220, 0.307, 0.391", \
+			  "0.191, 0.181, 0.163, 0.250, 0.333", \
+			  "0.076, 0.067, 0.048, 0.136, 0.219", \
+			  "0.005, 0.000, 0.000, 0.064, 0.147" \
+			)
+		}	}
+		timing() {
+			related_pin	: "CLK"
+			timing_type	: hold_rising ;
+			rise_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.081, 0.091, 0.109, 0.147, 0.170", \
+			  "0.110, 0.119, 0.138, 0.175, 0.199", \
+			  "0.167, 0.176, 0.195, 0.233, 0.256", \
+			  "0.281, 0.291, 0.310, 0.347, 0.370", \
+			  "0.353, 0.362, 0.381, 0.419, 0.442" \
+			)
+			}
+			fall_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.081, 0.091, 0.109, 0.147, 0.170", \
+			  "0.110, 0.119, 0.138, 0.175, 0.199", \
+			  "0.167, 0.176, 0.195, 0.233, 0.256", \
+			  "0.281, 0.291, 0.310, 0.347, 0.370", \
+			  "0.353, 0.362, 0.381, 0.419, 0.442" \
+			)
+	}	}	}
+	bus(D)	 {
+		bus_type : ram_128x16_DATA;
+		direction : input;
+		capacitance : 0.005;
+		memory_write() {
+			address : A;
+			clocked_on : "CLK";
+		}
+		timing() {
+			related_pin	: "CLK"
+			timing_type	: setup_rising ;
+			rise_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.156, 0.183, 0.295, 0.520, 0.660", \
+			  "0.128, 0.154, 0.267, 0.491, 0.632", \
+			  "0.071, 0.097, 0.210, 0.434, 0.575", \
+			  "0.000, 0.000, 0.095, 0.320, 0.460", \
+			  "0.000, 0.000, 0.024, 0.248, 0.389" \
+			)
+			}
+			fall_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.156, 0.183, 0.295, 0.520, 0.660", \
+			  "0.128, 0.154, 0.267, 0.491, 0.632", \
+			  "0.071, 0.097, 0.210, 0.434, 0.575", \
+			  "0.000, 0.000, 0.095, 0.320, 0.460", \
+			  "0.000, 0.000, 0.024, 0.248, 0.389" \
+			)
+		}	}
+		timing() {
+			related_pin	: "CLK"
+			timing_type	: hold_rising ;
+			rise_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.000, 0.004", \
+			  "0.000, 0.000, 0.000, 0.006, 0.033", \
+			  "0.051, 0.000, 0.021, 0.063, 0.090", \
+			  "0.166, 0.114, 0.135, 0.178, 0.204", \
+			  "0.237, 0.185, 0.207, 0.249, 0.276" \
+			)
+			}
+			fall_constraint(ram_128x16_constraint_template) {
+			index_1 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			index_2 ("0.200, 0.600, 1.400, 3.000, 4.000");
+			values ( \
+			  "0.000, 0.000, 0.000, 0.000, 0.004", \
+			  "0.000, 0.000, 0.000, 0.006, 0.033", \
+			  "0.051, 0.000, 0.021, 0.063, 0.090", \
+			  "0.166, 0.114, 0.135, 0.178, 0.204", \
+			  "0.237, 0.185, 0.207, 0.249, 0.276" \
+			)
+		}	}
+	}
+
+	cell_leakage_power : 0.000;
+  }
+}

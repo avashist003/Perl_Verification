@@ -1,0 +1,78 @@
+#!/usr/bin/perl -w
+#
+# Author:  Mark A. Indovina
+#          Rochester, NY, USA
+#
+#------------------------------------------------
+#
+# this program splits object file into ROM sections
+#
+#--------------------------------------------------------
+#
+if (defined($ARGV[0]) && (defined($ARGV[1]) && ($ARGV[1] =~ /\.obj$/))) {
+	open(LIST, "$ARGV[1]") || die " Can't open '$ARGV[1]'" ;
+	}
+else {
+	die " usage: $0 <ROM Size> <tdsp object file>.obj\n" ;
+	}
+#
+$date = `date` ;
+chop($date) ;
+$name = $ARGV[1] ;
+$name =~ s/\.obj$// ;
+#
+$rom = -1 ;
+$next_rom = 0 ;
+$header = "" ;
+$daddr = 0 ;
+$addr = "" ;
+$inst = "" ;
+#
+# collect symbols and check opcodes... 
+#
+while (<LIST>) {
+	chop;
+	$line = $_ ;
+	$line =~ s/^\s+//g ;
+	if (length($line) == 0) {
+		next ;
+		}
+	if ($line =~ m#^//#) {
+		$header = $header . $line . "\n" ;
+		next ;
+		}
+	if ($line =~ /^@(\S+)\s+(\S+)$/) {
+		($addr, $inst) = ($1, $2) ;
+		$daddr = hex($addr) ;
+		}
+	if ($daddr >= $next_rom) {
+		$rom++ ;
+		$next_rom = $next_rom + 512 ;
+		$rom_file = "rom${rom}.txt" ;
+		close( OBJ ) ;
+		print STDERR " Generating $rom_file...\n" ;
+		open( OBJ, "> $rom_file") || die " Can't open '$rom_file'" ;
+		print(OBJ "// $rom_file\n") ;
+		print(OBJ $header) ;
+		}
+	printf(OBJ "\@%s %s\n", $addr, $inst);
+}
+#
+close(OBJ) ;
+close(LIST) ;
+
+#
+# need to generate at least rom0 and rom1 for DTMF module
+#
+if ($daddr < (512 + 512)) {
+	$rom++ ;
+	$next_rom = $next_rom + 512 ;
+	$rom_file = "rom${rom}.txt" ;
+	close( OBJ ) ;
+	print STDERR " Generating $rom_file...\n" ;
+	open( OBJ, "> $rom_file") || die " Can't open '$rom_file'" ;
+	print(OBJ "// $rom_file\n") ;
+	print(OBJ $header) ;
+	}
+printf(OBJ "\@%04x %04x\n", (512 + 512), 0x0000);
+close(OBJ) ;
